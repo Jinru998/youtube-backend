@@ -68,6 +68,26 @@ router.get('/search', async (req: express.Request, res: express.Response) => {
     }
 });
 
+// Add this new route to the backend
+
+router.get('/allVideos', async (req: express.Request, res: express.Response) => {
+    try {
+        const result = await cassandraClient.execute('SELECT * FROM videos');
+        const videos = result.rows.map((video) => {
+            return {
+                videoId: video.video_id,
+                title: video.title,
+                description: video.description,
+                url: s3Client.getSignedUrl('getObject', { Bucket: 'videos', Key: video.object_storage_key, Expires: 3600 })
+            };
+        });
+
+        res.status(200).send(videos);
+    } catch (error: any) {
+        res.status(500).send({ success: false, message: error.message });
+    }
+});
+
 
 
 export default router;
